@@ -57,13 +57,14 @@ module "ec2_instance" {
 
   name = "netflix-server"
 
-  instance_type          = var.instance_type
-  ami                    = var.ami
-  key_name               = var.key_pair
-  monitoring             = true
-  vpc_security_group_ids = [module.sg.id]
-  subnet_id              = var.subnet_id
-  user_data              = file("userdata.sh")
+  instance_type               = var.instance_type
+  ami                         = var.ami
+  key_name                    = var.key_pair
+  monitoring                  = true
+  vpc_security_group_ids      = [module.sg.id]
+  subnet_id                   = var.subnet_id
+  user_data                   = file("userdata.sh")
+  user_data_replace_on_change = true
   root_block_device = {
     size = 25
     type = "gp3"
