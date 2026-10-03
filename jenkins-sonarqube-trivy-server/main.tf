@@ -5,53 +5,51 @@ module "sg" {
   description = "Security group for netflix clone server"
   vpc_id      = var.vpc_id
 
-  ingress_with_cidr_blocks = [
-    {
+  ingress_rules = {
+    jenkins = {
       from_port   = 8080
       to_port     = 8080
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "Jenkins port"
-      cidr_blocks = "0.0.0.0/0"
-    },
-    {
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+    https = {
       from_port   = 443
       to_port     = 443
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "HTTPS"
-      cidr_blocks = "0.0.0.0/0"
-    },
-    {
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+    http = {
       from_port   = 80
       to_port     = 80
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "HTTP"
-      cidr_blocks = "0.0.0.0/0"
-    },
-    {
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+    ssh = {
       from_port   = 22
       to_port     = 22
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "SSH"
-      cidr_blocks = "0.0.0.0/0"
-    },
-    {
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+    sonarqube = {
       from_port   = 9000
       to_port     = 9000
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "SonarQube port"
-      cidr_blocks = "0.0.0.0/0"
+      cidr_ipv4   = "0.0.0.0/0"
     }
-  ]
+  }
 
-  egress_with_cidr_blocks = [
-    {
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
+  egress_rules = {
+    all = {
+      ip_protocol = "-1"
       description = "All traffic"
-      cidr_blocks = "0.0.0.0/0"
+      cidr_ipv4   = "0.0.0.0/0"
     }
-  ]
+  }
 }
 
 module "ec2_instance" {
@@ -63,14 +61,13 @@ module "ec2_instance" {
   ami                    = var.ami
   key_name               = var.key_pair
   monitoring             = true
-  vpc_security_group_ids = [module.sg.security_group_id]
+  vpc_security_group_ids = [module.sg.id]
   subnet_id              = var.subnet_id
   user_data              = file("userdata.sh")
-  root_block_device = [
-    { volume_size = 25
-      volume_type = "gp3"
-    }
-  ]
+  root_block_device = {
+    size = 25
+    type = "gp3"
+  }
 
   tags = {
     Terraform   = "true"
