@@ -18,7 +18,3 @@ variable "key_pair" {
   type        = string
 }
 
-variable "subnet_id" {
-  description = "Subnet ID"
-  type        = string
-}

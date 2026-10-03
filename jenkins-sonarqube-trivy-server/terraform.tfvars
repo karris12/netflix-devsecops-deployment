@@ -1,5 +1,5 @@
-vpc_id        = "vpc-06fe4f366ed34013b"
+vpc_id        = "vpc-0e5d0ee85fcbb9006"
 instance_type = "t2.large"
-ami           = "ami-0e8a34246278c21e4"
-key_pair      = "jenkins-server-key"
-subnet_id     = "subnet-04258cda49e304a37"
+# Ubuntu AMI name: ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-amd64-server-20260604
+ami           = "ami-0e5497a77ef21b5ac"
+key_pair      = "devops.pem"
