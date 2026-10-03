@@ -1,10 +1,3 @@
-data "aws_subnets" "selected" {
-  filter {
-    name   = "vpc-id"
-    values = [var.vpc_id]
-  }
-}
-
 module "sg" {
   source = "terraform-aws-modules/security-group/aws"
 
@@ -71,7 +64,7 @@ module "ec2_instance" {
   key_name               = var.key_pair
   monitoring             = true
   vpc_security_group_ids = [module.sg.security_group_id]
-  subnet_id              = data.aws_subnets.selected.ids[0]
+  subnet_id              = var.subnet_id
   user_data              = file("userdata.sh")
   root_block_device = [
     { volume_size = 25
