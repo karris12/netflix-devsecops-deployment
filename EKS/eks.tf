@@ -17,8 +17,8 @@ module "eks" {
     }
   }
 
-  vpc_id                   = module.vpc.vpc_id
-  subnet_ids               = module.vpc.private_subnets
+  vpc_id     = local.vpc_id
+  subnet_ids = local.subnet_ids
   # control_plane_subnet_ids = module.vpc.intra_subnets
 
   # # EKS Managed Node Group(s)
@@ -35,7 +35,7 @@ module "eks" {
       max_size     = 2
       desired_size = 1
 
-      instance_types = ["t3.large"]
+      instance_types = ["m7i-flex.large"]
       capacity_type  = "SPOT"
 
       tags = {
