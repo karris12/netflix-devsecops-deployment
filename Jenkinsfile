@@ -65,9 +65,18 @@ pipeline {
         stage('Push to Nexus') {
     steps {
         sh '''
-            echo "DOCKER_HOST=${DOCKER_HOST:-<unset>}"
-            docker context show
-            docker info | sed -n '/Insecure Registries/,+8p'
+            echo "Docker endpoint: ${DOCKER_HOST:-default context}"
+            echo "Docker context: $(docker context show)"
+            REGISTRY_CONFIG="$(docker info --format '{{json .RegistryConfig.IndexConfigs}}')"
+            echo "Docker registry configuration: $REGISTRY_CONFIG"
+            case "$REGISTRY_CONFIG" in
+                *'"172.31.44.164:8082"'*) ;;
+                *)
+                    echo "ERROR: Docker daemon is not configured to allow the HTTP Nexus registry at 172.31.44.164:8082."
+                    echo "Configure insecure-registries on the Docker daemon host and restart that daemon."
+                    exit 1
+                    ;;
+            esac
         '''
         withCredentials([usernamePassword(
             credentialsId: 'nexus-docker-credentials',
