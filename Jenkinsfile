@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
+        NEXUS_REGISTRY = '172.31.44.164:8082'
     }
     stages {
         stage('clean workspace') {
@@ -71,13 +72,13 @@ pipeline {
             sh '''
                 set +x
                 printf '%s' "$NEXUS_PASSWORD" |
-                    docker login localhost:8082 \
+                    docker login "$NEXUS_REGISTRY" \
                         --username "$NEXUS_USER" \
                         --password-stdin
 
-                docker tag netflix:latest localhost:8082/netflix:${BUILD_NUMBER}
-                docker push localhost:8082/netflix:${BUILD_NUMBER}
-                docker logout localhost:8082
+                docker tag netflix:latest "$NEXUS_REGISTRY/netflix:${BUILD_NUMBER}"
+                docker push "$NEXUS_REGISTRY/netflix:${BUILD_NUMBER}"
+                docker logout "$NEXUS_REGISTRY"
             '''
         }
     }
