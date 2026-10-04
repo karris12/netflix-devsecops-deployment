@@ -26,10 +26,19 @@ systemctl enable --now docker
 systemctl enable jenkins
 systemctl restart jenkins
 
-docker run -d --name sonar --restart unless-stopped -p 9000:9000 sonarqube:lts-community
+cat > /etc/sysctl.d/99-sonarqube.conf <<'EOF'
+vm.max_map_count=524288
+fs.file-max=131072
+EOF
+sysctl --system
+
+docker run -d --name sonar --restart unless-stopped -p 9000:9000 \
+  -v sonarqube_data:/opt/sonarqube/data \
+  -v sonarqube_extensions:/opt/sonarqube/extensions \
+  -v sonarqube_logs:/opt/sonarqube/logs \
+  sonarqube:26.9.0.129388-community
 
 docker volume create nexus-data
 docker run -d --name nexus --restart unless-stopped -p 8081:8081 -v nexus-data:/nexus-data -e 'INSTALL4J_ADD_VM_PARAMS=-Xms1536m -Xmx1536m -XX:MaxDirectMemorySize=1536m -Djava.util.prefs.userRoot=/nexus-data/javaprefs' sonatype/nexus3:latest
-
 
 
