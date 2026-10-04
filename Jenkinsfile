@@ -11,7 +11,7 @@ pipeline {
         }
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/karris12/netflix-devsecops-deployment.git'
+                git branch: 'main', url: 'https://github.com/gauri17-pro/nextflix.git'
             }
         }
         stage("Sonarqube Analysis") {
@@ -41,8 +41,15 @@ pipeline {
         }
         stage("Docker Build Image"){
             steps{
-                   
-                sh "docker build --build-arg API_KEY=285aff0aaae10a5d5a6bd4fe517e0cde -t netflix ."
+                withCredentials([string(credentialsId: 'tmdb-api-key', variable: 'TMDB_API_KEY')]) {
+                    sh '''
+                        test -f package.json || {
+                            echo "Docker build context must contain package.json"
+                            exit 1
+                        }
+                        docker build --build-arg API_KEY="$TMDB_API_KEY" -t netflix .
+                    '''
+                }
             }
         }
         stage("TRIVY"){

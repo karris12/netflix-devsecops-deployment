@@ -55,6 +55,7 @@ The install script uses named Docker volumes for SonarQube data, extensions, and
 1. Go to Manage Jenkins -> Tools -> Docker Installations -> Install automatically
 
 2. And then go to Manage Jenkins -> Credentials -> System -> Global Credentials -> Add credentials. Add username and password for the docker registry (You need to create an account on Dockerhub). 
+3. Add the TMDB API key as a **Secret text** credential with ID `tmdb-api-key`. The pipeline checks out the application repository (`gauri17-pro/nextflix`), which contains the `package.json` and Dockerfile required for the Docker build.
 
 ## Step 6: Create a pipeline in order to build and push the dockerized image securely using multiple security tools
 
@@ -106,8 +107,9 @@ pipeline {
         }
         stage("Docker Build Image"){
             steps{
-                   
-                sh "docker build --build-arg API_KEY=2af0904de8242d48e8527eeedc3e19d9 -t netflix ."
+                withCredentials([string(credentialsId: 'tmdb-api-key', variable: 'TMDB_API_KEY')]) {
+                    sh 'docker build --build-arg API_KEY="$TMDB_API_KEY" -t netflix .'
+                }
             }
         }
         stage("TRIVY"){
@@ -208,8 +210,6 @@ kubectl get svc argocd-server -n argocd -o json
 ```
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
-
-
 
 
 
