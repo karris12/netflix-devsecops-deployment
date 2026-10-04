@@ -35,8 +35,8 @@ module "eks" {
       max_size     = 2
       desired_size = 1
 
-      instance_types = ["m7i-flex.large"]
-      capacity_type  = "SPOT"
+      instance_types = ["t3.micro"]
+      capacity_type  = "ON_DEMAND"
 
       tags = {
         ExtraTag = "helloworld"

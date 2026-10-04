@@ -1,6 +1,6 @@
 locals {
   region = "us-east-2"
-  name   = "amonkincloud-cluster"
+  name   = "netflix-cluster"
   tags = {
     Example = local.name
   }

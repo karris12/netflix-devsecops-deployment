@@ -162,9 +162,11 @@ pipeline {
     }
     ```
 
-## Step 7: Create an EKS Cluster using Terraform 
+## Step 7: Create an EKS Cluster using Terraform
 
-Prerequisite: Install kubectl and helm before executing the commands below 
+Prerequisite: Install kubectl and helm before executing the commands below.
+
+The Terraform configuration names the cluster `netflix-cluster` and uses one `t3.micro` On-Demand worker node to target Free Tier-eligible EC2 sizing where the AWS account and region qualify. A `t3.micro` has limited memory and may not have enough capacity for application workloads or optional monitoring add-ons. EC2 Free Tier eligibility depends on your account's offer and usage; Amazon EKS control-plane charges are separate and are not made free by using a micro instance. Check current AWS pricing and Free Tier eligibility before applying.
 
 ## Step 8: Deploy Prometheus and Grafana on EKS 
 
@@ -238,5 +240,4 @@ kubectl get svc argocd-server -n argocd -o json
 ```
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
-
 
