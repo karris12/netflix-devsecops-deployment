@@ -77,28 +77,34 @@ pipeline {
         }
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/gauri17-pro/nextflix.git'
+                dir('app') {
+                    git branch: 'main', url: 'https://github.com/gauri17-pro/nextflix.git'
+                }
             }
         }
         stage("Sonarqube Analysis") {
             steps {
-                withSonarQubeEnv('sonar-server') {
-                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
-                    -Dsonar.projectKey=Netflix'''
+                dir('app') {
+                    withSonarQubeEnv('sonar-server') {
+                        sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
+                        -Dsonar.projectKey=Netflix'''
+                    }
                 }
             }
         }
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP DP-Check', nvdCredentialsId: 'owasp-nvd-api-key'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                dir('app') {
+                    dependencyCheck additionalArguments: '--scan . --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP DP-Check', nvdCredentialsId: 'owasp-nvd-api-key'
+                }
+                dependencyCheckPublisher pattern: 'app/dependency-check-report.xml'
             }
         }
         stage('TRIVY FS SCAN') {
             steps {
                 script {
                     try {
-                        sh "trivy fs . > trivyfs.txt" 
+                        sh "trivy fs app > trivyfs.txt" 
                     }catch(Exception e){
                         input(message: "Are you sure to proceed?", ok: "Proceed")
                     }
@@ -108,7 +114,17 @@ pipeline {
         stage("Docker Build Image"){
             steps{
                 withCredentials([string(credentialsId: 'tmdb-api-key', variable: 'TMDB_API_KEY')]) {
-                    sh 'docker build --build-arg API_KEY="$TMDB_API_KEY" -t netflix .'
+                    sh '''
+                        test -s app/package.json || {
+                            echo "ERROR: app/package.json is missing."
+                            ls -la app
+                            exit 1
+                        }
+                        docker build --build-arg API_KEY="$TMDB_API_KEY" \
+                            --file app/Dockerfile \
+                            --tag netflix:latest \
+                            app
+                    '''
                 }
             }
         }
@@ -210,7 +226,6 @@ kubectl get svc argocd-server -n argocd -o json
 ```
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
-
 
 
 

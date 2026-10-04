@@ -12,28 +12,34 @@ pipeline {
         }
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/karris12/netflix-devsecops-deployment.git'
+                dir('app') {
+                    git branch: 'main', url: 'https://github.com/gauri17-pro/nextflix.git'
+                }
             }
         }
         stage("Sonarqube Analysis") {
             steps {
-                withSonarQubeEnv('sonar-server') {
-                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
-                    -Dsonar.projectKey=Netflix'''
+                dir('app') {
+                    withSonarQubeEnv('sonar-server') {
+                        sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
+                        -Dsonar.projectKey=Netflix'''
+                    }
                 }
             }
         }
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP DP-Check', nvdCredentialsId: 'owasp-nvd-api-key'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                dir('app') {
+                    dependencyCheck additionalArguments: '--scan . --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP DP-Check', nvdCredentialsId: 'owasp-nvd-api-key'
+                }
+                dependencyCheckPublisher pattern: 'app/dependency-check-report.xml'
             }
         }
         stage('TRIVY FS SCAN') {
             steps {
                 script {
                     try {
-                        sh "trivy fs . > trivyfs.txt" 
+                        sh "trivy fs app > trivyfs.txt"
                     } catch(Exception e) {
                         input(message: "Are you sure to proceed?", ok: "Proceed")
                     }
@@ -41,12 +47,27 @@ pipeline {
             }
         }
         stage('Docker Build Image') {
-    steps {
-        sh '''
-            docker build --build-arg API_KEY=${TMDB_API_KEY} -t netflix .
-        '''
-    }
-}
+            steps {
+                withCredentials([string(credentialsId: 'tmdb-api-key', variable: 'TMDB_API_KEY')]) {
+                    sh '''
+                        test -s app/package.json || {
+                            echo "ERROR: app/package.json is missing. Verify the application checkout in the Checkout from Git stage."
+                            ls -la app
+                            exit 1
+                        }
+                        test -f app/Dockerfile || {
+                            echo "ERROR: app/Dockerfile is missing from the application checkout."
+                            ls -la app
+                            exit 1
+                        }
+                        docker build --build-arg API_KEY="$TMDB_API_KEY" \
+                            --file app/Dockerfile \
+                            --tag netflix:latest \
+                            app
+                    '''
+                }
+            }
+        }
         stage("TRIVY") {
             steps {
                 sh "trivy image netflix > trivyimage.txt"
@@ -60,16 +81,13 @@ pipeline {
                 sh '''
                     echo "Docker endpoint: ${DOCKER_HOST:-default context}"
                     echo "Docker context: $(docker context show)"
-                    REGISTRY_CONFIG="$(docker info --format '{{json .RegistryConfig.IndexConfigs}}')"
-                    echo "Docker registry configuration: $REGISTRY_CONFIG"
-                    case "$REGISTRY_CONFIG" in
-                        *'"172.31.44.164:8082"'*) ;;
-                        *)
-                            echo "ERROR: Docker daemon is not configured to allow the HTTP Nexus registry at 172.31.44.164:8082."
-                            echo "Configure insecure-registries on the Docker daemon host and restart that daemon."
-                            exit 1
-                            ;;
-                    esac
+                    DOCKER_INFO="$(docker info)"
+                    printf '%s\n' "$DOCKER_INFO" | sed -n '/Insecure Registries/,+8p'
+                    if ! printf '%s\n' "$DOCKER_INFO" | grep -Fq "$NEXUS_REGISTRY"; then
+                        echo "ERROR: Docker daemon is not configured to allow the HTTP Nexus registry at $NEXUS_REGISTRY."
+                        echo "Configure insecure-registries on the Docker daemon host and restart that daemon."
+                        exit 1
+                    fi
                 '''
                 withCredentials([usernamePassword(
                     credentialsId: 'nexus-docker-credentials',
