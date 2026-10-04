@@ -41,13 +41,12 @@ pipeline {
             }
         }
         stage('Docker Build Image') {
-            steps {
-                sh '''
-                    test -f package.json || (echo "Docker build context must contain package.json" && exit 1)
-                    docker build --build-arg API_KEY=${TMDB_API_KEY} -t netflix .
-                '''
-            }
-        }
+    steps {
+        sh '''
+            docker build --build-arg API_KEY=${TMDB_API_KEY} -t netflix .
+        '''
+    }
+}
         stage("TRIVY") {
             steps {
                 sh "trivy image netflix > trivyimage.txt"
