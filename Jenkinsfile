@@ -64,6 +64,11 @@ pipeline {
 
         stage('Push to Nexus') {
     steps {
+        sh '''
+            echo "DOCKER_HOST=${DOCKER_HOST:-<unset>}"
+            docker context show
+            docker info | sed -n '/Insecure Registries/,+8p'
+        '''
         withCredentials([usernamePassword(
             credentialsId: 'nexus-docker-credentials',
             usernameVariable: 'NEXUS_USER',
