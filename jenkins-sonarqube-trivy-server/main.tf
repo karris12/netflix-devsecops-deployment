@@ -41,6 +41,13 @@ module "sg" {
       description = "SonarQube port"
       cidr_ipv4   = "0.0.0.0/0"
     }
+    nexus = {
+      from_port   = 8081
+      to_port     = 8081
+      ip_protocol = "tcp"
+      description = "Nexus Repository port"
+      cidr_ipv4   = "0.0.0.0/0"
+    }
   }
 
   egress_rules = {

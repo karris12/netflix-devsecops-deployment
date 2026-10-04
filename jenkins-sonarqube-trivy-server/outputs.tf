@@ -22,3 +22,8 @@ output "sonarqube_url" {
   description = "SonarQube Access URL"
   value       = "http://${aws_eip.eip.public_ip}:9000"
 }
+
+output "nexus_url" {
+  description = "Nexus Repository Access URL"
+  value       = "http://${aws_eip.eip.public_ip}:8081"
+}

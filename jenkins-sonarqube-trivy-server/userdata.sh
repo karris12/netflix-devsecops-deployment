@@ -18,6 +18,8 @@ echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io
 apt-get update -y
 apt-get install -y jenkins trivy
 
+trivy fs --scanners vuln,misconfig,secret --exit-code 0 --skip-dirs /proc,/sys,/dev,/run,/var/lib/docker / > /var/log/trivy-filesystem-scan.txt 2>&1 || echo "Trivy filesystem scan did not complete; see /var/log/trivy-filesystem-scan.txt"
+
 usermod -aG docker ubuntu
 usermod -aG docker jenkins
 systemctl enable --now docker
@@ -25,6 +27,9 @@ systemctl enable jenkins
 systemctl restart jenkins
 
 docker run -d --name sonar --restart unless-stopped -p 9000:9000 sonarqube:lts-community
+
+docker volume create nexus-data
+docker run -d --name nexus --restart unless-stopped -p 8081:8081 -v nexus-data:/nexus-data -e 'INSTALL4J_ADD_VM_PARAMS=-Xms1536m -Xmx1536m -XX:MaxDirectMemorySize=1536m -Djava.util.prefs.userRoot=/nexus-data/javaprefs' sonatype/nexus3:latest
 
 
 
