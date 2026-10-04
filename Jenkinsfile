@@ -40,19 +40,16 @@ pipeline {
                 }
             }
         }
-        stage("Docker Build Image"){
-            steps{
-                withCredentials([string(credentialsId: 'tmdb-api-key', variable: 'TMDB_API_KEY')]) {
-                    sh '''
-                        test -f package.json || {
-                            echo "Docker build context must contain package.json"
-                            exit 1
-                        }
-                        docker build --build-arg API_KEY="$TMDB_API_KEY" -t netflix .
-                    '''
-                }
-            }
+        stage('Docker Build Image') {
+    steps {
+        dir('path/to/your/app') {
+            sh '''
+                test -f package.json || (echo "Docker build context must contain package.json" && exit 1)
+                docker build --build-arg API_KEY=${TMDB_API_KEY} -t netflix .
+            '''
         }
+    }
+}
         stage("TRIVY"){
             steps{
                 sh "trivy image netflix > trivyimage.txt"
