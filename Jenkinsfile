@@ -12,7 +12,7 @@ pipeline {
         }
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/gauri17-pro/nextflix.git'
+                git branch: 'main', url: 'https://github.com/karris12/netflix-devsecops-deployment.git'
             }
         }
         stage("Sonarqube Analysis") {
