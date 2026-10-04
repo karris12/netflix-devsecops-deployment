@@ -138,10 +138,23 @@ pipeline {
         }
         stage("Docker Push"){
             steps{
-                script {
-                    withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker'){   
-                    sh "docker tag netflix gauris17/netflix:latest "
-                    sh "docker push gauris17/netflix:latest"
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker-cred',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_PASSWORD'
+                    )]) {
+                        sh '''
+                            set +x
+                            export DOCKER_CONFIG="$(mktemp -d)"
+                            trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+
+                            printf '%s' "$DOCKERHUB_PASSWORD" |
+                                docker login --username "$DOCKERHUB_USER" --password-stdin
+
+                            docker tag netflix:latest agodzo/netflix:latest
+                            docker push agodzo/netflix:latest
+                            docker logout
+                        '''
                     }
                 }
             }
@@ -226,7 +239,6 @@ kubectl get svc argocd-server -n argocd -o json
 ```
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
-
 
 
 
