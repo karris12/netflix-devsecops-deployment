@@ -36,10 +36,19 @@ Add URL of SonarQube and for the credential select the one added in step 2.
 4. Go to Manage Jenkins -> Tools -> SonarQube Scanner Installations
 -> Install automatically.
 
+### SonarQube version and upgrades
+
+The EC2 install script deploys SonarQube Community Build `26.9.0.129388-community`, the latest Community Build image available on October 3, 2026. Community Build is released monthly; this pinned tag avoids an install silently changing between deployments. Update the image tag in `jenkins-sonarqube-trivy-server/userdata.sh` when choosing a later release.
+
+The install script uses named Docker volumes for SonarQube data, extensions, and logs, and configures the host's `vm.max_map_count` setting. Keep these volumes when updating an installation.
+
+**Do not apply a Terraform change to `userdata.sh` to upgrade an existing server without first backing it up and planning the supported SonarQube upgrade path.** The previous install script used `sonarqube:lts-community` without volumes, so its database and files are in the container's writable layer. Also, `user_data_replace_on_change = true` in the EC2 Terraform configuration means a user-data change replaces the EC2 instance. Back up and migrate the existing data through the required intermediate versions before replacing that instance or container. See SonarSource's [update path guidance](https://docs.sonarsource.com/sonarqube-community-build/server-update-and-maintenance/update/determine-path/) and [Docker update instructions](https://docs.sonarsource.com/sonarqube-community-build/server-update-and-maintenance/update/update/).
+
 ## Step 4: Set up OWASP Dependency Check 
 
 1. Go to Manage Jenkins -> Tools -> Dependency-Check Installations
 -> Install automatically
+2. In Manage Jenkins -> Credentials, add a **Secret text** credential containing your NVD API key with the ID `owasp-nvd-api-key`. The pipeline references this credential; do not put the key directly in the Jenkinsfile.
 
 ## Step 5: Set up Docker for Jenkins
 
@@ -80,7 +89,7 @@ pipeline {
         }
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP DP-Check'
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP DP-Check', nvdCredentialsId: 'owasp-nvd-api-key'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
@@ -199,8 +208,6 @@ kubectl get svc argocd-server -n argocd -o json
 ```
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
-
-
 
 
 
