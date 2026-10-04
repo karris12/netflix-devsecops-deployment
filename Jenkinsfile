@@ -110,24 +110,23 @@ pipeline {
         }
         stage("Docker Push") {
             steps {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-cred',
-                        usernameVariable: 'DOCKERHUB_USER',
-                        passwordVariable: 'DOCKERHUB_PASSWORD'
-                    )]) {
-                        sh '''
-                            set +x
-                            export DOCKER_CONFIG="$(mktemp -d)"
-                            trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-cred',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASSWORD'
+                )]) {
+                    sh '''
+                        set +x
+                        export DOCKER_CONFIG="$(mktemp -d)"
+                        trap 'rm -rf "$DOCKER_CONFIG"' EXIT
 
-                            printf '%s' "$DOCKERHUB_PASSWORD" |
-                                docker login --username "$DOCKERHUB_USER" --password-stdin
+                        printf '%s' "$DOCKERHUB_PASSWORD" |
+                            docker login --username "$DOCKERHUB_USER" --password-stdin
 
-                            docker tag netflix:latest agodzo/netflix:latest
-                            docker push agodzo/netflix:latest
-                            docker logout
-                        '''
-                    }
+                        docker tag netflix:latest agodzo/netflix:latest
+                        docker push agodzo/netflix:latest
+                        docker logout
+                    '''
                 }
             }
         }
