@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        NEXUS_REGISTRY = '172.31.44.164:8082'
+        NEXUS_REGISTRY = '3.137.18.209:8081'
     }
     stages {
         stage('clean workspace') {
